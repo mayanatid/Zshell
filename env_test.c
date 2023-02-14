@@ -8,7 +8,6 @@
 
 bool cmnd_in_dir(char* dir, char* cmnd)
 {
-    // printf("files in %s:\n", dir);
     DIR *dr;
     struct dirent *en;
     dr = opendir(dir);
@@ -16,9 +15,9 @@ bool cmnd_in_dir(char* dir, char* cmnd)
     {
         while((en = readdir(dr)) != NULL)
         {
-            // printf("%s\n", en->d_name);
             if(strcmp(cmnd, en->d_name) == 0)
             {
+                closedir(dr);
                 return true;
             }
         }
@@ -27,7 +26,7 @@ bool cmnd_in_dir(char* dir, char* cmnd)
 
 }
 
-void read_path(char* path)
+char* read_path(char* path, char* cmnd)
 {
     char s_path[1024];
     memset(s_path, 0, 1024);
@@ -38,9 +37,12 @@ void read_path(char* path)
     {
         if(path[i] == ':')
         {
-            if(cmnd_in_dir(s_path, "ls"))
+            if(cmnd_in_dir(s_path, cmnd))
             {
-                printf("ls found in %s\n", s_path);
+                char* r_path = (char*)malloc(j + 1);
+                memset(r_path, 0, j+1);
+                strcpy(r_path, s_path);
+                return r_path;
             }
             memset(s_path, 0, 1024);
             j=0;
@@ -52,12 +54,29 @@ void read_path(char* path)
         i++;
         
     }
+    return NULL;
 }
 
 int main(int ac, char* av[], char* env[])
 {
 
-    read_path(getenv("PATH"));
+
+    char* path = read_path(getenv("PATH"), av[1]);
+    if(!path)
+    {
+        printf("Couldn't find command!\n");
+        return 0;
+    }
+    // printf("Found ls in %s\n", path);
+    strcat(path, "/");
+    strcat(path, av[1]);
+    char* arglist[] = {path, "ls", NULL};
+    char* envList[] = {"HOME=/root", getenv("PATH"), NULL};
+    execve(arglist[0], arglist, envList);
+    
+    
+    
+    free(path);
     // cmnd_in_dir("/home/docode/.goenv/versions/1.18.7/bin", "ls");
 
     // printf("env[0] = %s\n", env[0]);
