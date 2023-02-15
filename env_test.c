@@ -115,6 +115,7 @@ char** construct_arg_list_from_input(char* input)
         }
         if(input[i_end] == '\0')
         {
+            argList[j] = NULL;
             return argList;
         }
         i_end++;
@@ -124,12 +125,13 @@ char** construct_arg_list_from_input(char* input)
 
 }
 
-void free_arg_list(int ac, char** argList)
+void free_arg_list(char** argList)
 {
     int i =0;
-    while(i < ac)
+    while(argList[i])
     {
         free(argList[i]);
+        i++;
     }
     free(argList);
 }
@@ -174,9 +176,12 @@ int main(int ac, char* av[], char* env[])
             if(execve(argList[0], argList, envList) == -1)
             {
                 perror("lsh");
-                exit(EXIT_FAILURE);
             }
-            else
+            free_arg_list(argList);
+            free(path);
+            exit(EXIT_FAILURE);
+
+        }else
             {
                 do {
                     wpid = waitpid(pid, &status, WUNTRACED);
