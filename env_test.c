@@ -125,6 +125,18 @@ char** construct_arg_list_from_input(char* input)
 
 }
 
+void print_arg_list(char** argList)
+{
+    int i = 0;
+    printf("{");
+    while(argList[i])
+    {
+        printf("%s, ", argList[i]);
+        i++;
+    }
+    printf("}\n");
+}
+
 void free_arg_list(char** argList)
 {
     int i =0;
@@ -157,14 +169,18 @@ int main(int ac, char* av[], char* env[])
         {
             memset(buffer, 0, MAX_BUFFER);
             printf("MA - my_zsh>");
-            scanf("%s", buffer);
+            scanf("%[^\n]s", buffer);
             char** argList = construct_arg_list_from_input(buffer);
             char* path = read_path(getenv("PATH"), argList[0]);
 
             if(!path)
             {
+                if(strcmp("quit", argList[0]) == 0)
+                {
+                    return 1;
+                }
                 printf("Couldn't find command!\n");
-                return 0;
+                return 1;
             }
 
             strcat(path, "/");
@@ -187,8 +203,6 @@ int main(int ac, char* av[], char* env[])
                     wpid = waitpid(pid, &status, WUNTRACED);
                 } while(!WIFEXITED(status) && !WIFSIGNALED(status));
             }
-        }        
-        return 1;
     }
 
     // strcat(path, "/");
