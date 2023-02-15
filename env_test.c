@@ -177,8 +177,12 @@ int main(int ac, char* av[], char* env[])
             {
                 if(strcmp("quit", argList[0]) == 0)
                 {
+                    free_arg_list(argList);
+                    free(path);
                     return 1;
                 }
+                free_arg_list(argList);
+                free(path);
                 printf("Couldn't find command!\n");
                 return 1;
             }
