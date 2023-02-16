@@ -154,6 +154,7 @@ int main()
 {
     char buffer[MAX_BUFFER];
     char cwd_buffer[MAX_BUFFER];
+    char temp_buffer[MAX_BUFFER];
     memset(cwd_buffer, 0, MAX_BUFFER);
     getcwd(cwd_buffer, MAX_BUFFER);
     // char** argList_av = construct_arg_list(ac, av);
@@ -184,13 +185,17 @@ int main()
             {
                 if(!argList[1] || strcmp(argList[1], "~") == 0)
                 {
-                    memset(cwd_buffer, 0, MAX_BUFFER);
+                    
                     getcwd(cwd_buffer, MAX_BUFFER);
                     chdir(getenv("HOME"));
                 }
                 else if(strcmp(argList[1], "-") == 0)
                 {
+                    memset(temp_buffer, 0, MAX_BUFFER);
+                    getcwd(temp_buffer, MAX_BUFFER);
                     chdir(cwd_buffer);
+                    strcpy(cwd_buffer, temp_buffer);
+
                 }
                 else
                 {
