@@ -153,6 +153,9 @@ void free_arg_list(char** argList)
 int main()
 {
     char buffer[MAX_BUFFER];
+    char cwd_buffer[MAX_BUFFER];
+    memset(cwd_buffer, 0, MAX_BUFFER);
+    getcwd(cwd_buffer, MAX_BUFFER);
     // char** argList_av = construct_arg_list(ac, av);
     // char* path = read_path(getenv("PATH"), argList_av[0]);
     // if(!path)
@@ -181,10 +184,18 @@ int main()
             {
                 if(!argList[1] || strcmp(argList[1], "~") == 0)
                 {
+                    memset(cwd_buffer, 0, MAX_BUFFER);
+                    getcwd(cwd_buffer, MAX_BUFFER);
                     chdir(getenv("HOME"));
+                }
+                else if(strcmp(argList[1], "-") == 0)
+                {
+                    chdir(cwd_buffer);
                 }
                 else
                 {
+                    memset(cwd_buffer, 0, MAX_BUFFER);
+                    getcwd(cwd_buffer, MAX_BUFFER);
                     chdir(argList[1]);
                 }
                 
