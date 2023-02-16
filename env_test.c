@@ -42,6 +42,7 @@ char* read_path(char* path, char* cmnd)
         {
             if(cmnd_in_dir(s_path, cmnd))
             {
+                // printf("Found %s in %s\n", cmnd, s_path);
                 char* r_path = (char*)malloc(j + 1);
                 memset(r_path, 0, j+1);
                 strcpy(r_path, s_path);
@@ -137,6 +138,7 @@ void print_arg_list(char** argList)
     printf("}\n");
 }
 
+
 void free_arg_list(char** argList)
 {
     int i =0;
@@ -148,7 +150,7 @@ void free_arg_list(char** argList)
     free(argList);
 }
 
-int main(int ac, char* av[], char* env[])
+int main()
 {
     char buffer[MAX_BUFFER];
     // char** argList_av = construct_arg_list(ac, av);
@@ -158,55 +160,56 @@ int main(int ac, char* av[], char* env[])
     //     printf("Couldn't find command!\n");
     //     return 0;
     // }
-
-    while(true)
+    bool process = true;
+    while(process)
     {   
         pid_t pid, wpid;
         int status;
-
-        pid = fork();
-        if(pid == 0)
+        memset(buffer, 0, MAX_BUFFER);
+        printf("MA - my_zsh>");
+        fflush(stdout);
+        scanf(" %[^\n]",buffer);
+        char** argList = construct_arg_list_from_input(buffer);
+        char* path = read_path(getenv("PATH"), argList[0]);
+        if(!path)
         {
-            memset(buffer, 0, MAX_BUFFER);
-            printf("MA - my_zsh>");
-            scanf("%[^\n]s", buffer);
-            char** argList = construct_arg_list_from_input(buffer);
-            char* path = read_path(getenv("PATH"), argList[0]);
-
-            if(!path)
+            if(strcmp("exit", argList[0]) == 0)
             {
-                if(strcmp("quit", argList[0]) == 0)
-                {
-                    free_arg_list(argList);
-                    free(path);
-                    return 1;
-                }
-                free_arg_list(argList);
-                free(path);
-                printf("Couldn't find command!\n");
-                return 1;
+                process = false;
             }
-
+            else
+            {
+                printf("Couldn't find command!\n");
+            }
+            
+        }
+        else
+        {
             strcat(path, "/");
             strcat(path, argList[0]);
             argList[0] = (char*)realloc(argList[0], strlen(path) + 1);
             memset(argList[0], 0,  strlen(path) + 1);
             strcpy(argList[0], path);
             char* envList[] = {"HOME=/root", getenv("PATH"), NULL};
-            if(execve(argList[0], argList, envList) == -1)
-            {
-                perror("lsh");
-            }
-            free_arg_list(argList);
-            free(path);
-            exit(EXIT_FAILURE);
 
-        }else
+            pid = fork();
+            if(pid == 0)
             {
-                do {
-                    wpid = waitpid(pid, &status, WUNTRACED);
-                } while(!WIFEXITED(status) && !WIFSIGNALED(status));
-            }
+                if(execve(argList[0], argList, envList) == -1)
+                {
+                    perror("lsh");
+                }
+                exit(EXIT_FAILURE);
+
+            }else
+                {
+                    do {
+                        wpid = waitpid(pid, &status, WUNTRACED);
+                    } while(!WIFEXITED(status) && !WIFSIGNALED(status));
+                }
+            free_arg_list(argList);
+        }
+        free(path);
     }
 
     // strcat(path, "/");
