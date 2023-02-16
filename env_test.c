@@ -177,6 +177,18 @@ int main()
             {
                 process = false;
             }
+            else if(strcmp("cd", argList[0]) == 0)
+            {
+                if(!argList[1] || strcmp(argList[1], "~") == 0)
+                {
+                    chdir(getenv("HOME"));
+                }
+                else
+                {
+                    chdir(argList[1]);
+                }
+                
+            }
             else
             {
                 printf("Couldn't find command!\n");
@@ -203,7 +215,8 @@ int main()
 
             }else
                 {
-                    do {
+                    do 
+                    {
                         wpid = waitpid(pid, &status, WUNTRACED);
                     } while(!WIFEXITED(status) && !WIFSIGNALED(status));
                 }
