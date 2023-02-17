@@ -44,6 +44,7 @@ char* read_path(char* path, char* cmnd)
         {
             if(cmnd_in_dir(s_path, cmnd))
             {
+                // printf("Found in %s\n", s_path);
                 char* r_path = (char*)malloc(j + 1);
                 memset(r_path, 0, j+1);
                 strcpy(r_path, s_path);
@@ -57,7 +58,6 @@ char* read_path(char* path, char* cmnd)
             j++;
         }
         i++;
-        
     }
     return NULL;
 }
@@ -97,6 +97,19 @@ int get_number_arguments(char* input)
     return arg_count;
 }
 
+void print_arg_list(char** argList)
+{
+    int i = 0;
+    printf("{");
+    while(argList[i])
+    {
+        printf("%s, ", argList[i]);
+        i++;
+    }
+    printf("}\n");
+}
+
+
 char** construct_arg_list_from_input(char* input)
 {
     int arg_count = get_number_arguments(input);
@@ -127,17 +140,6 @@ char** construct_arg_list_from_input(char* input)
 
 }
 
-void print_arg_list(char** argList)
-{
-    int i = 0;
-    printf("{");
-    while(argList[i])
-    {
-        printf("%s, ", argList[i]);
-        i++;
-    }
-    printf("}\n");
-}
 
 
 void free_arg_list(char** argList)
@@ -242,14 +244,18 @@ int main(int ac, char* argv[], char* env[])
         memset(buffer, 0, MAX_BUFFER);
         printf("MA - my_zsh>");
         fflush(stdout);
-        scanf_ret = scanf(" %[^\n]",buffer);
-        if(scanf_ret == EOF) return 0;
-
+        scanf_ret = read(STDIN_FILENO, buffer, MAX_BUFFER);
+        int size = strlen(buffer);
+        memset(buffer + size - 1, 0, MAX_BUFFER - (size - 1));
+        // buffer[size-1] = '\0';
+        // printf("buffer: %s\n", buffer);
+        // scanf_ret = scanf(" %[^\n]",buffer);
+        if(scanf_ret == 0) return 0;
         char** argList = construct_arg_list_from_input(buffer);
         int path_i = find_path_in_env(env);
         char* path = read_path(env[path_i], argList[0]);
         // char* path = read_path(getenv("PATH"), argList[0]);
-        if(!path)
+        if(path == NULL)
         {
             if(strcmp("exit", argList[0]) == 0)
             {
@@ -261,6 +267,7 @@ int main(int ac, char* argv[], char* env[])
             }
             else
             {
+                // process = false;
                 printf("Couldn't find command!\n");
             }      
         }
