@@ -25,24 +25,25 @@ bool cmnd_in_dir(char* dir, char* cmnd)
             }
         }
     }
+    closedir(dr);
     return false;
 
 }
 
 char* read_path(char* path, char* cmnd)
 {
+
     char s_path[1024];
     memset(s_path, 0, 1024);
-    int i = 0;
+    int i = 5;
     int j = 0;
-
-    while(path[i] != '\0')
+    // printf("Path length: %lu\n", strlen(path));
+    while(i < (int)strlen(path))
     {
         if(path[i] == ':')
         {
             if(cmnd_in_dir(s_path, cmnd))
             {
-                // printf("Found %s in %s\n", cmnd, s_path);
                 char* r_path = (char*)malloc(j + 1);
                 memset(r_path, 0, j+1);
                 strcpy(r_path, s_path);
@@ -150,31 +151,104 @@ void free_arg_list(char** argList)
     free(argList);
 }
 
-int main()
+void exec_cd(char* cwd_buffer, char* temp_buffer, char** argList)
 {
+    if(!argList[1] || strcmp(argList[1], "~") == 0)
+    {
+        
+        getcwd(cwd_buffer, MAX_BUFFER);
+        chdir(getenv("HOME"));
+    }
+    else if(strcmp(argList[1], "-") == 0)
+    {
+        memset(temp_buffer, 0, MAX_BUFFER);
+        getcwd(temp_buffer, MAX_BUFFER);
+        chdir(cwd_buffer);
+        strcpy(cwd_buffer, temp_buffer);
+
+    }
+    else
+    {
+        memset(cwd_buffer, 0, MAX_BUFFER);
+        getcwd(cwd_buffer, MAX_BUFFER);
+        chdir(argList[1]);
+    }
+}
+
+int find_path_in_env(char* env[])
+{
+    int i =0;
+    while(env[i])
+    {
+        if(strncmp(env[i], "PATH", 4) == 0)
+        {
+            return i;
+        }
+        i++;
+    }
+    return i;
+}
+
+char* construct_env_string(char* env[])
+{
+    int k =0;
+    int len=0;
+    while(env[k])
+    {
+        len += strlen(env[k]);
+        k++;
+    }
+
+    char* env_str = (char*)malloc(len + k + 1);
+    k = 0;
+    len = 0;
+    while(env[k])
+    {
+    
+        strcat(env_str, env[k]);
+        strcat(env_str, "\n");
+        k++;
+    }
+    return env_str;
+
+
+}
+
+int main(int ac, char* argv[], char* env[])
+{
+    if(ac < 0)
+    {
+        return 0;
+    }
+    if(strcmp(argv[0], "BLAH") == 0)
+    {
+        return 0;
+    }
+    
+    
+
     char buffer[MAX_BUFFER];
     char cwd_buffer[MAX_BUFFER];
     char temp_buffer[MAX_BUFFER];
     memset(cwd_buffer, 0, MAX_BUFFER);
     getcwd(cwd_buffer, MAX_BUFFER);
-    // char** argList_av = construct_arg_list(ac, av);
-    // char* path = read_path(getenv("PATH"), argList_av[0]);
-    // if(!path)
-    // {
-    //     printf("Couldn't find command!\n");
-    //     return 0;
-    // }
     bool process = true;
+    // return 0;
     while(process)
     {   
-        pid_t pid, wpid;
+        pid_t pid;
         int status;
+        int scanf_ret;
         memset(buffer, 0, MAX_BUFFER);
         printf("MA - my_zsh>");
         fflush(stdout);
-        scanf(" %[^\n]",buffer);
+        scanf_ret = scanf(" %[^\n]",buffer);
+        if(scanf_ret == EOF) return 0;
+
         char** argList = construct_arg_list_from_input(buffer);
-        char* path = read_path(getenv("PATH"), argList[0]);
+        int path_i = find_path_in_env(env);
+        char* path = read_path(env[path_i], argList[0]);
+        // char* path = read_path(getenv("PATH"), argList[0]);
         if(!path)
         {
             if(strcmp("exit", argList[0]) == 0)
@@ -183,33 +257,18 @@ int main()
             }
             else if(strcmp("cd", argList[0]) == 0)
             {
-                if(!argList[1] || strcmp(argList[1], "~") == 0)
-                {
-                    
-                    getcwd(cwd_buffer, MAX_BUFFER);
-                    chdir(getenv("HOME"));
-                }
-                else if(strcmp(argList[1], "-") == 0)
-                {
-                    memset(temp_buffer, 0, MAX_BUFFER);
-                    getcwd(temp_buffer, MAX_BUFFER);
-                    chdir(cwd_buffer);
-                    strcpy(cwd_buffer, temp_buffer);
-
-                }
-                else
-                {
-                    memset(cwd_buffer, 0, MAX_BUFFER);
-                    getcwd(cwd_buffer, MAX_BUFFER);
-                    chdir(argList[1]);
-                }
-                
+                exec_cd(cwd_buffer, temp_buffer, argList);
             }
             else
             {
                 printf("Couldn't find command!\n");
-            }
-            
+            }      
+        }
+        else if(strcmp(buffer, "env") == 0)
+        {
+            char* env_str = construct_env_string(env);
+            printf("%s\n", env_str);
+            free(env_str);
         }
         else
         {
@@ -232,38 +291,14 @@ int main()
             }else
                 {
                     do 
-                    {
-                        wpid = waitpid(pid, &status, WUNTRACED);
-                    } while(!WIFEXITED(status) && !WIFSIGNALED(status));
+                        {
+                            waitpid(pid, &status, WUNTRACED);
+                        } while(!WIFEXITED(status) && !WIFSIGNALED(status));
                 }
             free_arg_list(argList);
         }
         free(path);
     }
-
-    // strcat(path, "/");
-    // strcat(path, argList[0]);
-    // argList[0] = (char*)realloc(argList[0], strlen(path) + 1);
-    // memset(argList[0], 0,  strlen(path) + 1);
-    // strcpy(argList[0], path);
-    // char* envList[] = {"HOME=/root", getenv("PATH"), NULL};
-    // execve(argList[0], argList, envList);
-    
-    
-    // free_arg_list(ac, argList);
-    // free(path);
-    // cmnd_in_dir("/home/docode/.goenv/versions/1.18.7/bin", "ls");
-
-    // printf("env[0] = %s\n", env[0]);
-    // printf("Main program started\n");
-    // printf("PATH=%s\n", getenv("PATH"));
-    // char* argv[] = { "ls", "-l", NULL};
-    // char* envp[] = { env[0], NULL };
-    // if (execve(argv[0], argv, envp) == -1)
-    // perror("Could not execve");
-    
     
     return 0;
-
-
 }
