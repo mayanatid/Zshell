@@ -245,6 +245,7 @@ char* construct_env_string(char* env[])
     }
 
     char* env_str = (char*)malloc(len + k + 1);
+    memset(env_str,0,len+k+1);
     k = 0;
     len = 0;
     while(env[k])
@@ -274,12 +275,16 @@ void exec_prog(char** argList, char** env)
         exit(EXIT_FAILURE);
 
     }else
+    {
+        do 
         {
-            do 
-                {
-                    waitpid(pid, &status, WUNTRACED);
-                } while(!WIFEXITED(status) && !WIFSIGNALED(status));
+            waitpid(pid, &status, WUNTRACED);
+        } while(!WIFEXITED(status) && !WIFSIGNALED(status));
+        if(WIFSIGNALED(status))
+        {
+            psignal(WTERMSIG(status), "Exit signal");
         }
+    }
 
 }
 
@@ -296,7 +301,6 @@ int main(int ac, char* argv[], char* env[])
     }
     
     
-
     char buffer[MAX_BUFFER];
     char cwd_buffer[MAX_BUFFER];
     char temp_buffer[MAX_BUFFER];
@@ -359,6 +363,7 @@ int main(int ac, char* argv[], char* env[])
             else if(strcmp(buffer, "env") == 0)
             {
                 char* env_str = construct_env_string(env);
+                // printf("PATH=\nPWD=\n");
                 printf("%s\n", env_str);
                 free(env_str);
             }
