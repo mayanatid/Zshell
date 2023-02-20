@@ -97,37 +97,6 @@ int get_number_arguments(char* input)
     return arg_count;
 }
 
-char** parse_buffer_commands(char* buffer)
-{
-    int i =0;
-    int j =0;
-    int i_start=0;
-    int i_end=0;
-    int cmnd_count =0;
-    while(i != '\0')
-    {
-        if(buffer[i] == '\n')
-        {
-            cmnd_count++;
-        }
-        i++;
-    }
-    char** cmnd_list = (char**)(sizeof(char*)*cmnd_count + 1);
-    i =0;
-    while(i_end != '\0')
-    {
-        if(buffer[i_end] == '\n')
-        {
-            cmnd_list[j] = (char*)malloc(i_end-i_start+1);
-            strncpy(cmnd_list[j], &buffer[i_start], i_end - i_start);
-            i_start = i_end + 1;
-            j++;
-        }
-        i_end++;
-    }
-    cmnd_list[cmnd_count] = NULL;
-    return cmnd_list;
-}
 
 void print_arg_list(char** argList)
 {
@@ -141,6 +110,45 @@ void print_arg_list(char** argList)
     printf("}\n");
 }
 
+char** parse_buffer_commands(char* buffer)
+{
+    int i =0;
+    int j =0;
+    int i_start=0;
+    int i_end=0;
+    int cmnd_count =0;
+    while(buffer[i]!= '\0')
+    {
+        // printf("buffer[%d] = %c\n", i, buffer[i]);
+        if(buffer[i] == '\n')
+        {
+            cmnd_count++;
+        }
+        i++;
+    }
+    cmnd_count++; // For last cmnd
+    // printf("cmnd_count = %d\n", cmnd_count);
+    char** cmnd_list = (char**)malloc(sizeof(char*)*(cmnd_count + 1));
+    i =0;
+    while(buffer[i_end] != '\0')
+    {
+        if(buffer[i_end] == '\n')
+        {
+            cmnd_list[j] = (char*)malloc(i_end-i_start+1);
+            strncpy(cmnd_list[j], &buffer[i_start], i_end - i_start);
+            i_start = i_end + 1;
+            j++;
+        }
+        i_end++;
+    }
+
+    cmnd_list[j] = (char*)malloc(i_end-i_start+1);
+    memset(cmnd_list[j], 0 , i_end - i_start + 1);
+    strncpy(cmnd_list[j], &buffer[i_start], i_end - i_start);
+    j++;
+    cmnd_list[cmnd_count] = NULL;
+    return cmnd_list;
+}
 
 char** construct_arg_list_from_input(char* input)
 {
@@ -156,7 +164,7 @@ char** construct_arg_list_from_input(char* input)
         if(input[i_end] == ' ' || input[i_end] == '\0')
         {
             // printf("i_start: %d... i_end: %d\n", i_start, i_end);
-            print_arg_list(argList);
+            // print_arg_list(argList);
             argList[j] = (char*)malloc(i_end - i_start + 1);
             memset(argList[j], 0, i_end - i_start + 1);
             strncpy(argList[j], &input[i_start], i_end - i_start);
@@ -312,70 +320,83 @@ int main(int ac, char* argv[], char* env[])
         // printf("buffer: %s\n", buffer);
         // scanf_ret = scanf(" %[^\n]",buffer);
         if(scanf_ret == 0) return 0;
-        char** argList = construct_arg_list_from_input(buffer);
-        int path_i = find_path_in_env(env);
-        char* path = read_path(env[path_i], argList[0]);
-        struct stat st;
-        // char* path = read_path(getenv("PATH"), argList[0]);
-        if(path == NULL)
+
+        char** cmnd_list = parse_buffer_commands(buffer);
+        // print_arg_list(cmnd_list);
+        int j_cmnd =0;
+        while(cmnd_list[j_cmnd])
         {
-            if(strcmp("exit", argList[0]) == 0)
+            
+            char** argList = construct_arg_list_from_input(cmnd_list[j_cmnd]);
+            int path_i = find_path_in_env(env);
+            char* path = read_path(env[path_i], argList[0]);
+            struct stat st;
+            // char* path = read_path(getenv("PATH"), argList[0]);
+            if(path == NULL)
             {
-                process = false;
+                if(strcmp("exit", argList[0]) == 0)
+                {
+                    process = false;
+                }
+                else if(strcmp("cd", argList[0]) == 0)
+                {
+                    exec_cd(cwd_buffer, temp_buffer, argList);
+                }
+                else if(buffer[0] == '.')
+                {
+                    exec_prog(argList, env);
+                }
+                else if(stat(buffer, &st) == 0 && st.st_mode & S_IXUSR)
+                {
+                    exec_prog(argList, env);   
+                }
+                else
+                {
+                    // process = false;
+                    printf("Couldn't find command!\n");
+                }      
             }
-            else if(strcmp("cd", argList[0]) == 0)
+            else if(strcmp(buffer, "env") == 0)
             {
-                exec_cd(cwd_buffer, temp_buffer, argList);
-            }
-            else if(buffer[0] == '.')
-            {
-                exec_prog(argList, env);
-            }
-            else if(stat(buffer, &st) == 0 && st.st_mode & S_IXUSR)
-            {
-                exec_prog(argList, env);   
+                char* env_str = construct_env_string(env);
+                printf("%s\n", env_str);
+                free(env_str);
             }
             else
             {
-                // process = false;
-                printf("Couldn't find command!\n");
-            }      
-        }
-        else if(strcmp(buffer, "env") == 0)
-        {
-            char* env_str = construct_env_string(env);
-            printf("%s\n", env_str);
-            free(env_str);
-        }
-        else
-        {
-            strcat(path, "/");
-            strcat(path, argList[0]);
-            argList[0] = (char*)realloc(argList[0], strlen(path) + 1);
-            memset(argList[0], 0,  strlen(path) + 1);
-            strcpy(argList[0], path);
-            ///char* envList[] = {"HOME=/root", getenv("PATH"), NULL};
+                strcat(path, "/");
+                strcat(path, argList[0]);
+                argList[0] = (char*)realloc(argList[0], strlen(path) + 1);
+                memset(argList[0], 0,  strlen(path) + 1);
+                strcpy(argList[0], path);
+                ///char* envList[] = {"HOME=/root", getenv("PATH"), NULL};
 
-            pid = fork();
-            if(pid == 0)
-            {
-                if(execve(argList[0], argList, env) == -1)
+                pid = fork();
+                if(pid == 0)
                 {
-                    perror("lsh");
-                }
-                exit(EXIT_FAILURE);
+                    if(execve(argList[0], argList, env) == -1)
+                    {
+                        perror("lsh");
+                    }
+                    exit(EXIT_FAILURE);
 
-            }else
-                {
-                    do 
-                        {
-                            waitpid(pid, &status, WUNTRACED);
-                        } while(!WIFEXITED(status) && !WIFSIGNALED(status));
-                }
-            free_arg_list(argList);
+                }else
+                    {
+                        do 
+                            {
+                                waitpid(pid, &status, WUNTRACED);
+                            } while(!WIFEXITED(status) && !WIFSIGNALED(status));
+                    }
+                free_arg_list(argList);
+            }
+            free(path);
+            j_cmnd++;
         }
-        free(path);
+        
+        free_arg_list(cmnd_list);
     }
     
+        
+
     return 0;
 }
