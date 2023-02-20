@@ -288,6 +288,32 @@ void exec_prog(char** argList, char** env)
 
 }
 
+void exec_setenv(char** argList)
+{
+    int i =0;
+    int var_len =0;
+    while(argList[1][i] != '=')
+    {
+        i++;
+        var_len++;
+    }
+    int val_len = strlen(argList[1]) - var_len - 1;
+    char* var_name = (char*)malloc(var_len + 1);
+    char* var_val = (char*)malloc(val_len + 1);
+
+    memset(var_name, 0, var_len + 1);
+    memset(var_val, 0, val_len + 1);
+
+    strncpy(var_name, &argList[1][0], var_len);
+    strncpy(var_val, &argList[1][var_len + 1], val_len);
+
+    printf("varname: %s... varval: %s\n", var_name, var_val);
+
+    setenv(var_name, var_val, 1);
+
+    free(var_name);
+    free(var_val);
+}
 
 int main(int ac, char* argv[], char* env[])
 {
@@ -345,6 +371,10 @@ int main(int ac, char* argv[], char* env[])
                 else if(strcmp("cd", argList[0]) == 0)
                 {
                     exec_cd(cwd_buffer, temp_buffer, argList);
+                }
+                else if(strcmp("setenv", argList[0]) == 0)
+                {
+                    exec_setenv(argList);
                 }
                 else if(buffer[0] == '.')
                 {
