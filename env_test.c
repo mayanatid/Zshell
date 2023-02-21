@@ -311,9 +311,9 @@ void exec_setenv(char** argList)
     strncpy(var_name, &argList[1][0], var_len);
     strncpy(var_val, &argList[1][var_len + 1], val_len);
 
-    printf("varname: %s... varval: %s\n", var_name, var_val);
+    // printf("varname: %s... varval: %s\n", var_name, var_val);
 
-    setenv(var_name, var_val, 1);
+    setenv(var_name, var_val, 0);
 
     free(var_name);
     free(var_val);
