@@ -262,6 +262,8 @@ char* construct_env_string(char* env[])
 
 void exec_prog(char** argList, char** env)
 {
+    // printf("This is another test!\n");
+    // fprintf(stderr, "this is a test\n");
     pid_t pid;
     int status;
     //char* envList[] = {"HOME=/root", getenv("PATH"), NULL};
@@ -282,6 +284,8 @@ void exec_prog(char** argList, char** env)
         } while(!WIFEXITED(status) && !WIFSIGNALED(status));
         if(WIFSIGNALED(status))
         {
+            // printf("This is another test!\n");
+            // fprintf(stderr, "this is a test\n");
             psignal(WTERMSIG(status), "Exit signal");
         }
     }
@@ -317,6 +321,7 @@ void exec_setenv(char** argList)
 
 int main(int ac, char* argv[], char* env[])
 {
+    
     if(ac < 0)
     {
         return 0;
@@ -356,7 +361,6 @@ int main(int ac, char* argv[], char* env[])
         int j_cmnd =0;
         while(cmnd_list[j_cmnd])
         {
-            
             char** argList = construct_arg_list_from_input(cmnd_list[j_cmnd]);
             int path_i = find_path_in_env(env);
             char* path = read_path(env[path_i], argList[0]);
@@ -364,7 +368,8 @@ int main(int ac, char* argv[], char* env[])
             // char* path = read_path(getenv("PATH"), argList[0]);
             if(path == NULL)
             {
-                if(strcmp("exit", argList[0]) == 0)
+
+                if(strcmp("quit", argList[0]) == 0)
                 {
                     process = false;
                 }
@@ -376,8 +381,9 @@ int main(int ac, char* argv[], char* env[])
                 {
                     exec_setenv(argList);
                 }
-                else if(buffer[0] == '.')
+                else if(argList[0][0] == '.')
                 {
+                    
                     exec_prog(argList, env);
                 }
                 else if(stat(buffer, &st) == 0 && st.st_mode & S_IXUSR)
@@ -387,7 +393,7 @@ int main(int ac, char* argv[], char* env[])
                 else
                 {
                     // process = false;
-                    printf("Couldn't find command!\n");
+                    fprintf(stderr, "Couldn't find command!\n");
                 }      
             }
             else if(strcmp(buffer, "env") == 0)
@@ -409,6 +415,8 @@ int main(int ac, char* argv[], char* env[])
                 pid = fork();
                 if(pid == 0)
                 {
+                    // fprintf(stderr,"Pretty sure this should be visible\n");
+                    // fprintf(stderr,"Arg[0]:%s\n", argList[0]);
                     if(execve(argList[0], argList, env) == -1)
                     {
                         perror("lsh");
@@ -419,6 +427,7 @@ int main(int ac, char* argv[], char* env[])
                     {
                         do 
                             {
+                                
                                 waitpid(pid, &status, WUNTRACED);
                             } while(!WIFEXITED(status) && !WIFSIGNALED(status));
                     }
