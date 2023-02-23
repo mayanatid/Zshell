@@ -183,6 +183,22 @@ char** construct_arg_list_from_input(char* input)
 
 }
 
+void sub_env_vars_for_args(char** argList)
+{
+    int i=0;
+    while(argList[i])
+    {
+        if(argList[i][0] == '$')
+        {
+            long len = strlen(getenv(&argList[i][1])) +1;
+            char* var = getenv(&argList[i][1]);
+            argList[i] = (char*)realloc(argList[i],len);
+            memset(argList[i], 0, len);
+            strcpy(argList[i], var);
+        }
+        i++;
+    }
+}
 
 
 void free_arg_list(char** argList)
@@ -362,6 +378,7 @@ int main(int ac, char* argv[], char* env[])
         while(cmnd_list[j_cmnd])
         {
             char** argList = construct_arg_list_from_input(cmnd_list[j_cmnd]);
+            sub_env_vars_for_args(argList);
             int path_i = find_path_in_env(env);
             char* path = read_path(env[path_i], argList[0]);
             struct stat st;
