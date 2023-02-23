@@ -335,6 +335,7 @@ void exec_setenv(char** argList)
     free(var_val);
 }
 
+
 int main(int ac, char* argv[], char* env[])
 {
     
@@ -397,6 +398,10 @@ int main(int ac, char* argv[], char* env[])
                 else if(strcmp("setenv", argList[0]) == 0)
                 {
                     exec_setenv(argList);
+                }
+                else if(strcmp("unsetenv", argList[0]) == 0)
+                {
+                    unsetenv(argList[1]);
                 }
                 else if(argList[0][0] == '.')
                 {
