@@ -28,7 +28,6 @@ bool cmnd_in_dir(char* dir, char* cmnd)
     }
     closedir(dr);
     return false;
-
 }
 
 char* read_path(char* path, char* cmnd)
@@ -44,6 +43,7 @@ char* read_path(char* path, char* cmnd)
         {
             if(cmnd_in_dir(s_path, cmnd))
             {
+                // printf("Found in %s\n", s_path);
                 char* r_path = (char*)malloc(j + 1);
                 memset(r_path, 0, j+1);
                 strcpy(r_path, s_path);
@@ -247,8 +247,8 @@ int find_path_in_env(char* env[])
 
 char* construct_env_string(char* env[])
 {
-    int k   = 0;
-    int len = 0;
+    int k =0;
+    int len=0;
     while(env[k])
     {
         len += strlen(env[k]);
@@ -267,6 +267,8 @@ char* construct_env_string(char* env[])
         k++;
     }
     return env_str;
+
+
 }
 
 void exec_prog(char** argList, char** env)
@@ -333,6 +335,8 @@ int main(int ac, char* argv[], char* env[])
     {
         return 0;
     }
+    
+    
     char buffer[MAX_BUFFER];
     char cwd_buffer[MAX_BUFFER];
     char temp_buffer[MAX_BUFFER];
@@ -390,6 +394,7 @@ int main(int ac, char* argv[], char* env[])
                 }
                 else
                 {
+                    // process = false;
                     fprintf(stderr, "Couldn't find command!\n");
                 }      
             }
