@@ -44,7 +44,6 @@ char* read_path(char* path, char* cmnd)
         {
             if(cmnd_in_dir(s_path, cmnd))
             {
-                // printf("Found in %s\n", s_path);
                 char* r_path = (char*)malloc(j + 1);
                 memset(r_path, 0, j+1);
                 strcpy(r_path, s_path);
@@ -119,7 +118,6 @@ char** parse_buffer_commands(char* buffer)
     int cmnd_count =0;
     while(buffer[i]!= '\0')
     {
-        // printf("buffer[%d] = %c\n", i, buffer[i]);
         if(buffer[i] == '\n')
         {
             cmnd_count++;
@@ -127,7 +125,6 @@ char** parse_buffer_commands(char* buffer)
         i++;
     }
     cmnd_count++; // For last cmnd
-    // printf("cmnd_count = %d\n", cmnd_count);
     char** cmnd_list = (char**)malloc(sizeof(char*)*(cmnd_count + 1));
     i =0;
     while(buffer[i_end] != '\0')
@@ -163,8 +160,6 @@ char** construct_arg_list_from_input(char* input)
     {
         if(input[i_end] == ' ' || input[i_end] == '\0')
         {
-            // printf("i_start: %d... i_end: %d\n", i_start, i_end);
-            // print_arg_list(argList);
             argList[j] = (char*)malloc(i_end - i_start + 1);
             memset(argList[j], 0, i_end - i_start + 1);
             strncpy(argList[j], &input[i_start], i_end - i_start);
@@ -252,8 +247,8 @@ int find_path_in_env(char* env[])
 
 char* construct_env_string(char* env[])
 {
-    int k =0;
-    int len=0;
+    int k   = 0;
+    int len = 0;
     while(env[k])
     {
         len += strlen(env[k]);
@@ -272,17 +267,12 @@ char* construct_env_string(char* env[])
         k++;
     }
     return env_str;
-
-
 }
 
 void exec_prog(char** argList, char** env)
 {
-    // printf("This is another test!\n");
-    // fprintf(stderr, "this is a test\n");
     pid_t pid;
     int status;
-    //char* envList[] = {"HOME=/root", getenv("PATH"), NULL};
     pid = fork();
     if(pid == 0)
     {
@@ -300,8 +290,6 @@ void exec_prog(char** argList, char** env)
         } while(!WIFEXITED(status) && !WIFSIGNALED(status));
         if(WIFSIGNALED(status))
         {
-            // printf("This is another test!\n");
-            // fprintf(stderr, "this is a test\n");
             psignal(WTERMSIG(status), "Exit signal");
         }
     }
@@ -327,8 +315,6 @@ void exec_setenv(char** argList)
     strncpy(var_name, &argList[1][0], var_len);
     strncpy(var_val, &argList[1][var_len + 1], val_len);
 
-    // printf("varname: %s... varval: %s\n", var_name, var_val);
-
     setenv(var_name, var_val, 0);
 
     free(var_name);
@@ -347,8 +333,6 @@ int main(int ac, char* argv[], char* env[])
     {
         return 0;
     }
-    
-    
     char buffer[MAX_BUFFER];
     char cwd_buffer[MAX_BUFFER];
     char temp_buffer[MAX_BUFFER];
@@ -362,19 +346,12 @@ int main(int ac, char* argv[], char* env[])
         int status;
         int scanf_ret;
         memset(buffer, 0, MAX_BUFFER);
-        // printf("MA - my_zsh>");
-        // fflush(stdout);
         scanf_ret = read(STDIN_FILENO, buffer, MAX_BUFFER);
         int size = strlen(buffer);
-        // printf("SIZE:%d\n", size);
         memset(buffer + size - 1, 0, MAX_BUFFER - (size - 1));
-        // buffer[size-1] = '\0';
-        // printf("buffer: %s\n", buffer);
-        // scanf_ret = scanf(" %[^\n]",buffer);
         if(scanf_ret == 0) return 0;
 
         char** cmnd_list = parse_buffer_commands(buffer);
-        // print_arg_list(cmnd_list);
         int j_cmnd =0;
         while(cmnd_list[j_cmnd])
         {
@@ -383,7 +360,6 @@ int main(int ac, char* argv[], char* env[])
             int path_i = find_path_in_env(env);
             char* path = read_path(env[path_i], argList[0]);
             struct stat st;
-            // char* path = read_path(getenv("PATH"), argList[0]);
             if(path == NULL)
             {
 
@@ -414,14 +390,12 @@ int main(int ac, char* argv[], char* env[])
                 }
                 else
                 {
-                    // process = false;
                     fprintf(stderr, "Couldn't find command!\n");
                 }      
             }
             else if(strcmp(buffer, "env") == 0)
             {
                 char* env_str = construct_env_string(env);
-                // printf("PATH=\nPWD=\n");
                 printf("%s\n", env_str);
                 free(env_str);
             }
@@ -432,13 +406,9 @@ int main(int ac, char* argv[], char* env[])
                 argList[0] = (char*)realloc(argList[0], strlen(path) + 1);
                 memset(argList[0], 0,  strlen(path) + 1);
                 strcpy(argList[0], path);
-                ///char* envList[] = {"HOME=/root", getenv("PATH"), NULL};
-
                 pid = fork();
                 if(pid == 0)
                 {
-                    // fprintf(stderr,"Pretty sure this should be visible\n");
-                    // fprintf(stderr,"Arg[0]:%s\n", argList[0]);
                     if(execve(argList[0], argList, env) == -1)
                     {
                         perror("lsh");
@@ -457,12 +427,8 @@ int main(int ac, char* argv[], char* env[])
             }
             free(path);
             j_cmnd++;
-        }
-        
+        }   
         free_arg_list(cmnd_list);
     }
-    
-        
-
     return 0;
 }
