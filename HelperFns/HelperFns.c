@@ -121,7 +121,7 @@ char*   helper_read_path(char* path, char* cmnd)
         
         while(i < (int)strlen(path))
         {
-            if(path[i] == ':')
+            if(path[i] == ':' || path[i] == '\0')
             {
                 if(helper_cmd_in_dir(s_path, cmnd))
                 {
@@ -147,10 +147,10 @@ char*   helper_read_path(char* path, char* cmnd)
 
 void    helper_exec_pwd(Shell* this)
 {
-        char buffer[MAX_BUFFER];
-        memset(buffer,0,MAX_BUFFER);
-        getcwd(buffer, MAX_BUFFER);
-        printf("%s\n", buffer);
+
+        memset(this->temp_buffer,0,MAX_BUFFER);
+        getcwd(this->temp_buffer, MAX_BUFFER);
+        printf("%s\n", this->temp_buffer);
 }
 
 void    helper_exec_cd(Shell* this)
@@ -256,4 +256,12 @@ void    helper_exec_env(Shell* this)
         char* env_str = helper_construct_env_string(this);
         printf("%s\n", env_str);
         free(env_str);
+}
+
+char*    helper_copy_string(char* src)
+{
+            char* dest = (char*)malloc(strlen(src) +1);
+            memset(dest, 0, strlen(src) +1);
+            strcpy(dest, src);
+            return dest;
 }

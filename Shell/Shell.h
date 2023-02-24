@@ -65,6 +65,7 @@ void    helper_exec_setenv(Shell*);
 void    helper_exec_unsetenv(Shell*);
 void    helper_exec_which(Shell*);
 void    helper_exec_env(Shell*);
+char*   helper_copy_string(char*);
 
 
 

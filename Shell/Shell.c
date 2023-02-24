@@ -38,6 +38,7 @@ void    shell_execute_prog(Shell* this)
         memset(cmnd, 0,  strlen(this->prog_path) + 1);
         strcpy(cmnd, this->prog_path);
         helper_construct_arg_list(this);
+        // this->arguments->print(this->arguments);
         this->pid = fork();
         if(this->pid == 0)
         {
@@ -58,6 +59,7 @@ void    shell_execute_prog(Shell* this)
             }
         }
         helper_destroy_arg_list(this);
+        free(this->prog_path);
 }
 
 bool    shell_execute_built_in(Shell* this)
@@ -65,7 +67,7 @@ bool    shell_execute_built_in(Shell* this)
         char* arg = this->arguments->head->value;
         struct stat st;
         if(strcmp(arg, "quit") == 0)
-        {
+        { 
             this->process = false;
             return true;
         }
@@ -101,11 +103,13 @@ bool    shell_execute_built_in(Shell* this)
         }
         if(arg[0] == '.')
         {
+            this->prog_path = helper_copy_string(arg);
             this->execute_prog(this);
             return true;
         }
         if(stat(this->input, &st) == 0 && st.st_mode & S_IXUSR)
         {
+            this->prog_path = helper_copy_string(arg);
             this->execute_prog(this);
             return true;   
         }
@@ -129,7 +133,6 @@ void    shell_parse_commands(Shell* this)
         this->commands = new_ll();
         int i_start=0;
         int i_end=0;
-        int cmnd_count =0;
         char* cmnd;
         while(this->input[i_end]!= '\0')
         {
@@ -187,11 +190,7 @@ void    shell_parse_args(Shell* this, char* command)
 
 int     shell_listen(Shell* this)
 {
-        pid_t pid;
-        int status;
         int read_ret;
-        int input_size;
-        struct stat st;
         while(this->process)
         {
             read_ret = this->read_input(this); if (read_ret == 0) return 0;
@@ -204,6 +203,7 @@ int     shell_listen(Shell* this)
                 this->parse_args(this, curr_cmnd->value);
                 if(this->execute_built_in(this))
                 {
+                    // printf("Built in\n");
                     curr_cmnd = curr_cmnd->next;
                     continue;
                 } 
@@ -216,7 +216,6 @@ int     shell_listen(Shell* this)
                 // printf("PATH: %s\n", this->prog_path);
                 this->execute_prog(this);
                 this->arguments->destroy(this->arguments);
-                free(this->prog_path);
                 curr_cmnd = curr_cmnd->next;
             }
             this->commands->destroy(this->commands);
@@ -230,9 +229,3 @@ void shell_destroy(Shell* this)
     free(this);
 }
 
-int main(int argc, char* argv[], char* env[])
-{
-    Shell* zsh = new_shell(env);
-    zsh->listen(zsh);
-    zsh->destroy(zsh);
-}
