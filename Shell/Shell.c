@@ -12,14 +12,15 @@ void    shell_constructor(Shell* this)
 Shell*  new_shell(char** env)
 {
         Shell template =   {
-                                    .init           = &shell_constructor,
-                                    .read_input     = &shell_read_input,
-                                    .listen         = &shell_listen,
-                                    .parse_commands = &shell_parse_commands,
-                                    .parse_args     = &shell_parse_args,
-                                    .parse_input    = &shell_parse_input,
-                                    .execute_prog   = &shell_execute_prog,
-                                    .destroy        = &shell_destroy
+                                    .init               = &shell_constructor,
+                                    .read_input         = &shell_read_input,
+                                    .listen             = &shell_listen,
+                                    .parse_commands     = &shell_parse_commands,
+                                    .parse_args         = &shell_parse_args,
+                                    .parse_input        = &shell_parse_input,
+                                    .execute_built_in   = &shell_execute_built_in,
+                                    .execute_prog       = &shell_execute_prog,
+                                    .destroy            = &shell_destroy
 
                                 };
         Shell* result = malloc(sizeof(Shell));
@@ -46,7 +47,7 @@ void    helper_sub_env_vars(Shell* this)
         }
 }
 
-char*    helper_find_path_in_env(Shell* this)
+char*   helper_find_path_in_env(Shell* this)
 {
         int i =0;
         while(this->envList[i])
@@ -111,26 +112,40 @@ char*   helper_read_path(char* path, char* cmnd)
         return NULL;
 }
 
-bool    helper_check_if_built_in(Shell* this)
+bool    shell_exectute_built_in(Shell* this)
 {
         char* arg = this->arguments->head->value;
         if(strcmp(arg, "quit") == 0)
         {
+            this->process = false;
             return true;
         }
         if(strcmp(arg, "cd") == 0)
         {
+            helper_exec_cd(this);
             return true;
         }
         if(strcmp(arg, "setenv") == 0)
         {
+            helper_exec_setenv(this);
             return true;
         }
         if(strcmp(arg, "unsetenv") == 0)
         {
+            helper_exec_unsetenv(this);
             return true;
         }
-        
+        if(strcmp(arg, "pwd") == 0)
+        {
+            helper_exec_pwd(this);
+            return true;
+        }
+        if(strcmp(arg, "which") == 0)
+        {
+            helper_exec_which(this);
+            return true;
+        }
+        return false;
         
 }
 
@@ -216,6 +231,7 @@ int     shell_listen(Shell* this)
             while(curr_cmnd)
             {
                 this->parse_args(this, curr_cmnd->value);
+                this
                 path = helper_read_path(helper_find_path_in_env(this), this->arguments->head->value);
                 this->arguments->destroy(this->arguments);
                 curr_cmnd = curr_cmnd->next;
