@@ -314,6 +314,7 @@ bool    shell_execute_built_in(Shell* this)
 
 int     shell_read_input(Shell* this)
 {
+        memset(this->input, 0 , MAX_BUFFER);
         int read_ret = read(STDIN_FILENO, this->input, MAX_BUFFER);
         int input_size = strlen(this->input);
         memset(this->input + input_size - 1, 0, MAX_BUFFER - (input_size - 1)); // Set ending values to \0
