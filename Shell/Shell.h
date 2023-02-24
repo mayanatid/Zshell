@@ -51,6 +51,7 @@ void    shell_execute_prog(Shell*);
 void    shell_destroy(Shell*);
 
 // helpers
+void    helper_set_prompt(Shell*, char*);
 void    helper_construct_arg_list(Shell*);
 void    helper_destroy_arg_list(Shell*);
 void    helper_sub_env_vars(Shell*);

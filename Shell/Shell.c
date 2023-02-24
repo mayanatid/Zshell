@@ -1,4 +1,5 @@
 #include "Shell.h"
+#include <stdio.h>
 
 void    shell_constructor(Shell* this)
 {
@@ -6,8 +7,7 @@ void    shell_constructor(Shell* this)
         memset(this->cwd_buffer, 0, MAX_BUFFER);
         memset(this->temp_buffer, 0, MAX_BUFFER);
         memset(this->prompt, 0, MAX_BUFFER);
-        this->prompt[0] = '[';
-        getcwd(&this->prompt[1], MAX_BUFFER - 1);
+        helper_set_prompt(this, getcwd(this->temp_buffer, MAX_BUFFER));
         this->process = true;
 }
 
@@ -116,6 +116,8 @@ bool    shell_execute_built_in(Shell* this)
 int     shell_read_input(Shell* this)
 {
         memset(this->input, 0 , MAX_BUFFER);
+        printf("%s", this->prompt);
+        fflush(stdout);
         int read_ret = read(STDIN_FILENO, this->input, MAX_BUFFER);
         int input_size = strlen(this->input);
         memset(this->input + input_size - 1, 0, MAX_BUFFER - (input_size - 1)); // Set ending values to \0
@@ -131,7 +133,7 @@ void    shell_parse_commands(Shell* this)
         char* cmnd;
         while(this->input[i_end]!= '\0')
         {
-            if(this->input[i_end] == '\n')
+            if(this->input[i_end] == '\n' || this->input[i_end] == ';')
             {
                 cmnd = (char*)malloc(i_end - i_start + 1);
                 memset(cmnd, 0 , i_end - i_start + 1);
@@ -142,7 +144,7 @@ void    shell_parse_commands(Shell* this)
             }
             i_end++;
         }
-        printf("i_end: %d... i_start: %d\n", i_end, i_start);
+        // printf("i_end: %d... i_start: %d\n", i_end, i_start);
         cmnd = (char*)malloc(i_end-i_start + 1);
         memset(cmnd, 0 , i_end - i_start + 1);
         strncpy(cmnd, &this->input[i_start], i_end - i_start + 1);
@@ -165,7 +167,7 @@ void    shell_parse_args(Shell* this, char* command)
                 arg = (char*)malloc(i_end - i_start + 1);
                 memset(arg, 0, i_end - i_start + 1);
                 strncpy(arg, &command[i_start], i_end - i_start);
-                printf("ARG: %s\n", arg);
+                // printf("ARG: %s\n", arg);
                 this->arguments->add(this->arguments, arg);
                 i_start = i_end + 1;
                 j++;
@@ -177,13 +179,11 @@ void    shell_parse_args(Shell* this, char* command)
             i_end++;
 
         }
-        printf("HERE!\n");
-        printf("ARG SIZE: %d\n", this->arguments->length);
-        this->arguments->print(this->arguments);
+        // printf("HERE!\n");
+        // printf("ARG SIZE: %d\n", this->arguments->length);
+        // this->arguments->print(this->arguments);
         helper_sub_env_vars(this); // Sub in env vars if any
 }
-
-
 
 int     shell_listen(Shell* this)
 {
@@ -197,7 +197,7 @@ int     shell_listen(Shell* this)
             read_ret = this->read_input(this); if (read_ret == 0) return 0;
             // printf("You entered: %s\n", this->input);
             this->parse_commands(this);
-            this->commands->print(this->commands);
+            // this->commands->print(this->commands);
             Node* curr_cmnd = this->commands->head;
             while(curr_cmnd)
             {
@@ -221,8 +221,8 @@ int     shell_listen(Shell* this)
             }
             this->commands->destroy(this->commands);
         }
+        return 1;
 }
-
 
 void shell_destroy(Shell* this)
 {

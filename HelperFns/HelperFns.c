@@ -1,5 +1,13 @@
 #include "../Shell/Shell.h"
 
+void    helper_set_prompt(Shell* this, char* prompt)
+{
+    memset(this->prompt, 0, MAX_BUFFER);
+    this->prompt[0] = '[';
+    strcpy(&this->prompt[1], prompt);
+    strcat(this->prompt, "]>");
+}
+
 void    helper_construct_arg_list(Shell* this)
 {
         Node* curr = this->arguments->head;
@@ -36,6 +44,7 @@ void    helper_sub_env_vars(Shell* this)
             if(arg->value[0] == '$')
             {
                 char* var = getenv(&arg->value[1]);
+                if(!var) return;
                 long len = strlen(var) +1;
                 arg->value = (char*)realloc(arg->value,len);
                 memset(arg->value, 0, len);
@@ -152,6 +161,8 @@ void    helper_exec_cd(Shell* this)
             
             getcwd(this->cwd_buffer, MAX_BUFFER);
             chdir(getenv("HOME"));
+            helper_set_prompt(this, getenv("HOME"));
+
         }
         else if(strcmp(arg1->value, "-") == 0)
         {
@@ -160,12 +171,23 @@ void    helper_exec_cd(Shell* this)
             chdir(this->cwd_buffer);
             strcpy(this->cwd_buffer, this->temp_buffer);
 
+            memset(this->temp_buffer, 0 , MAX_BUFFER);
+            helper_set_prompt(this, getcwd(this->temp_buffer, MAX_BUFFER));
+
         }
         else
-        {   
+        {   memset(this->temp_buffer, 0, MAX_BUFFER);
             memset(this->cwd_buffer, 0, MAX_BUFFER);
             getcwd(this->cwd_buffer, MAX_BUFFER);
-            chdir(arg1->value);
+             if(chdir(arg1->value) < 0)
+            {
+                fprintf(stderr, "Can't find directory\n");
+            }
+            else
+            {
+                memset(this->temp_buffer, 0 , MAX_BUFFER);
+                helper_set_prompt(this, getcwd(this->temp_buffer, MAX_BUFFER));
+            }
         }
 }
 
