@@ -3,6 +3,8 @@
 #define SHELL_H
 #include <stdio.h>
 #include <stdbool.h>
+#include <dirent.h>
+#include <sys/stat.h>
 #include "../LinkedList/LinkedList.h"
 
 #define MAX_BUFFER 1024
