@@ -151,6 +151,7 @@ void    shell_parse_commands(Shell* this)
         memset(cmnd, 0 , i_end - i_start + 1);
         strncpy(cmnd, &this->input[i_start], i_end - i_start);
         this->commands->add(this->commands, cmnd);
+        free(cmnd);
 }
 
 void    shell_parse_args(Shell* this, char* command)
@@ -171,6 +172,7 @@ void    shell_parse_args(Shell* this, char* command)
                 strncpy(arg, &command[i_start], i_end - i_start);
                 // printf("ARG: %s\n", arg);
                 this->arguments->add(this->arguments, arg);
+                free(arg);
                 i_start = i_end + 1;
                 j++;
             }
@@ -200,16 +202,21 @@ int     shell_listen(Shell* this)
                 this->parse_args(this, curr_cmnd->value);
                 if(this->execute_built_in(this))
                 {
-                    curr_cmnd = curr_cmnd->next;
-                    continue;
-                } 
-                this->prog_path = helper_read_path(helper_find_path_in_env(this), this->arguments->head->value);
-                if(!this->prog_path) 
-                {
-                    fprintf(stderr, "Command Not Found!\n");
-                    break;
+                    // continue...
                 }
-                this->execute_prog(this);
+                else 
+                {
+                    this->prog_path = helper_read_path(helper_find_path_in_env(this), this->arguments->head->value);
+                    if(!this->prog_path) 
+                    {
+                        fprintf(stderr, "Command Not Found!\n");
+                    }
+                    else
+                    {
+                        this->execute_prog(this);
+                    }
+                    
+                } 
                 this->arguments->destroy(this->arguments);
                 curr_cmnd = curr_cmnd->next;
             }
