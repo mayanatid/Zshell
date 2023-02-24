@@ -101,6 +101,11 @@ bool    shell_execute_built_in(Shell* this)
             helper_exec_env(this);
             return true;
         }
+        if(strcmp(arg, "echo") == 0)
+        {
+            helper_exec_echo(this);
+            return true;
+        }
         if(arg[0] == '.')
         {
             this->prog_path = helper_copy_string(arg);

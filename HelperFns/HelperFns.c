@@ -225,7 +225,7 @@ void    helper_exec_unsetenv(Shell* this)
 void    helper_exec_which(Shell* this)
 {
         char* arg = this->arguments->head->next->value;
-        char* builtins[8] = {
+        char* builtins[9] = {
                                 "quit", 
                                 "cd", 
                                 "setenv", 
@@ -233,6 +233,7 @@ void    helper_exec_which(Shell* this)
                                 "pwd",
                                 "which",
                                 "env",
+                                "echo",
                                 NULL    
                             };
         int i =0;
@@ -258,7 +259,12 @@ void    helper_exec_env(Shell* this)
         free(env_str);
 }
 
-char*    helper_copy_string(char* src)
+void    helper_exec_echo(Shell* this)
+{
+        printf("%s\n", this->arguments->head->next->value);
+}
+
+char*   helper_copy_string(char* src)
 {
             char* dest = (char*)malloc(strlen(src) +1);
             memset(dest, 0, strlen(src) +1);
