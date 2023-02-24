@@ -22,7 +22,6 @@ Shell*  new_shell(char** env)
                                     .listen             = &shell_listen,
                                     .parse_commands     = &shell_parse_commands,
                                     .parse_args         = &shell_parse_args,
-                                    .parse_input        = &shell_parse_input,
                                     .execute_built_in   = &shell_execute_built_in,
                                     .execute_prog       = &shell_execute_prog,
                                     .destroy            = &shell_destroy
@@ -94,7 +93,7 @@ char*   helper_find_path_in_env(Shell* this)
         return NULL;
 }
 
-char*    helper_construct_env_string(Shell* this)
+char*   helper_construct_env_string(Shell* this)
 {
         int k =0;
         int len=0;
@@ -153,10 +152,10 @@ char*   helper_read_path(char* path, char* cmnd)
                 {
                     // printf("Found in %s\n", s_path);
                     char* r_path = (char*)malloc(j + 1);
-                    memset(r_path, 0, j+1);
+                    memset(r_path, 0, j+strlen(cmnd) + 2);
                     strcpy(r_path, s_path);
-                    strcat(path, "/");
-                    strcat(path, cmnd);
+                    strcat(r_path, "/");
+                    strcat(r_path, cmnd);
                     return r_path;
                 }
                 memset(s_path, 0, 1024);
@@ -324,15 +323,13 @@ int     shell_read_input(Shell* this)
 void    shell_parse_commands(Shell* this)
 {
         this->commands = new_ll();
-        int i =0;
-        int j =0;
         int i_start=0;
         int i_end=0;
         int cmnd_count =0;
         char* cmnd;
-        while(this->input[i]!= '\0')
+        while(this->input[i_end]!= '\0')
         {
-            if(this->input[i] == '\n')
+            if(this->input[i_end] == '\n')
             {
                 cmnd = (char*)malloc(i_end - i_start + 1);
                 memset(cmnd, 0 , i_end - i_start + 1);
@@ -340,10 +337,10 @@ void    shell_parse_commands(Shell* this)
                 this->commands->add(this->commands, cmnd);
                 free(cmnd);
                 i_start = i_end + 1;
-                j++;
             }
-            i++;
+            i_end++;
         }
+        printf("i_end: %d... i_start: %d\n", i_end, i_start);
         cmnd = (char*)malloc(i_end-i_start + 1);
         memset(cmnd, 0 , i_end - i_start + 1);
         strncpy(cmnd, &this->input[i_start], i_end - i_start + 1);
@@ -352,23 +349,35 @@ void    shell_parse_commands(Shell* this)
 
 void    shell_parse_args(Shell* this, char* command)
 {
+       
         this->arguments = new_ll();
         int i_start= 0;
         int i_end = 0;
         int j = 0;
         char* arg;
-        while(command[i_end] != '\0')
-        {
+         
+        while(true)
+        {   
             if(command[i_end] == ' ' || command[i_end] == '\0')
             {
                 arg = (char*)malloc(i_end - i_start + 1);
                 memset(arg, 0, i_end - i_start + 1);
                 strncpy(arg, &command[i_start], i_end - i_start);
+                printf("ARG: %s\n", arg);
                 this->arguments->add(this->arguments, arg);
                 i_start = i_end + 1;
                 j++;
             }
+            if(command[i_end] == '\0')
+            {
+                break;
+            }
+            i_end++;
+
         }
+        printf("HERE!\n");
+        printf("ARG SIZE: %d\n", this->arguments->length);
+        this->arguments->print(this->arguments);
         helper_sub_env_vars(this); // Sub in env vars if any
 }
 
@@ -411,13 +420,20 @@ int     shell_listen(Shell* this)
         while(this->process)
         {
             read_ret = this->read_input(this); if (read_ret == 0) return 0;
+            printf("You entered: %s\n", this->input);
             this->parse_commands(this);
+            this->commands->print(this->commands);
             Node* curr_cmnd = this->commands->head;
             while(curr_cmnd)
             {
                 this->parse_args(this, curr_cmnd->value);
-                if(this->execute_built_in(this)) continue;
+                if(this->execute_built_in(this))
+                {
+                    curr_cmnd = curr_cmnd->next;
+                    continue;
+                } 
                 this->prog_path = helper_read_path(helper_find_path_in_env(this), this->arguments->head->value);
+                printf("PATH: %s\n", this->prog_path);
                 this->execute_prog(this);
                 this->arguments->destroy(this->arguments);
                 free(this->prog_path);
