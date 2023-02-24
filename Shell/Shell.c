@@ -63,6 +63,30 @@ char*   helper_find_path_in_env(Shell* this)
         return NULL;
 }
 
+char*    helper_construct_env_string(Shell* this)
+{
+        int k =0;
+        int len=0;
+        while(this->envList[k])
+        {
+            len += strlen(this->envList[k]);
+            k++;
+        }
+
+        char* env_str = (char*)malloc(len + k + 1);
+        memset(env_str,0,len+k+1);
+        k = 0;
+        len = 0;
+        while(this->envList[k])
+        {
+        
+            strcat(env_str, this->envList[k]);
+            strcat(env_str, "\n");
+            k++;
+        }
+        return env_str;
+}
+
 bool    helper_cmd_in_dir(char* dir, char* cmnd)
 {
         DIR *dr;
@@ -100,6 +124,8 @@ char*   helper_read_path(char* path, char* cmnd)
                     char* r_path = (char*)malloc(j + 1);
                     memset(r_path, 0, j+1);
                     strcpy(r_path, s_path);
+                    strcat(path, "/");
+                    strcat(path, cmnd);
                     return r_path;
                 }
                 memset(s_path, 0, 1024);
@@ -173,7 +199,46 @@ void    helper_exec_setenv(Shell* this)
         free(var_val);
 }
 
+void    helper_exec_unsetenv(Shell* this)
+{
+        unsetenv(this->arguments->head->next->value);
+}
 
+void    helper_exec_which(Shell* this)
+{
+        char* arg = this->arguments->head->next->value;
+        char* builtins[8] = {
+                                "quit", 
+                                "cd", 
+                                "setenv", 
+                                "unsetenv",
+                                "pwd",
+                                "which",
+                                "env",
+                                NULL    
+                            };
+        int i =0;
+        while(builtins[i])
+        {
+            if(strcmp(arg, builtins[i]) == 0)
+            {
+                printf("Built-in\n");
+                return;
+            }
+            i++;
+        }
+        // if not builtin
+        char* path = helper_read_path(helper_find_path_in_env(this), arg);
+        printf("%s\n", path);
+        free(path);
+}
+
+void    helper_exec_env(Shell* this)
+{
+        char* env_str = helper_construct_env_string(this);
+        printf("%s\n", env_str);
+        free(env_str);
+}
 
 bool    shell_exectute_built_in(Shell* this)
 {
@@ -206,6 +271,11 @@ bool    shell_exectute_built_in(Shell* this)
         if(strcmp(arg, "which") == 0)
         {
             helper_exec_which(this);
+            return true;
+        }
+        if(strcmp(arg, "env") == 0)
+        {
+            helper_exec_env(this);
             return true;
         }
         return false;
@@ -271,12 +341,33 @@ void    shell_parse_args(Shell* this, char* command)
         helper_sub_env_vars(this); // Sub in env vars if any
 }
 
-void    shell_parse_input(Shell* this)
+void    shell_execute_prog(Shell* this)
 {
-        this->parse_commands(this);
-
+        char* cmnd = this->arguments->head->value;
+        cmnd = (char*)realloc(cmnd, strlen(this->prog_path) + 1);
+        memset(cmnd, 0,  strlen(this->prog_path) + 1);
+        strcpy(cmnd, this->prog_path);
+        helper_construct_arg_list(this);
+        this->pid = fork();
+        if(this->pid == 0)
+        {
+            if(execve(this->argList[0], this->argList, this->envList) == -1)
+            {
+                perror("lsh");
+            }
+            exit(EXIT_FAILURE);
+        }else
+        {
+            do{
+                
+                waitpid(this->pid, &this->status, WUNTRACED);
+            } while(!WIFEXITED(this->status) && !WIFSIGNALED(this->status));
+            if(WIFSIGNALED(this->status))
+            {
+                psignal(WTERMSIG(this->status), "Exit signal");
+            }
+        }
 }
-
 
 int     shell_listen(Shell* this)
 {
@@ -284,7 +375,6 @@ int     shell_listen(Shell* this)
         int status;
         int read_ret;
         int input_size;
-        char* path;
         struct stat st;
         while(this->process)
         {
@@ -294,9 +384,11 @@ int     shell_listen(Shell* this)
             while(curr_cmnd)
             {
                 this->parse_args(this, curr_cmnd->value);
-                this
-                path = helper_read_path(helper_find_path_in_env(this), this->arguments->head->value);
+                if(this->execute_built_in(this)) continue;
+                this->prog_path = helper_read_path(helper_find_path_in_env(this), this->arguments->head->value);
+                this->execute_prog(this);
                 this->arguments->destroy(this->arguments);
+                free(this->prog_path);
                 curr_cmnd = curr_cmnd->next;
             }
             this->commands->destroy(this->commands);
