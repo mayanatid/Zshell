@@ -7,6 +7,9 @@ void    shell_constructor(Shell* this)
         memset(this->input, 0, MAX_BUFFER);
         memset(this->cwd_buffer, 0, MAX_BUFFER);
         memset(this->temp_buffer, 0, MAX_BUFFER);
+        memset(this->prompt, 0, MAX_BUFFER);
+        this->prompt[0] = '[';
+        getcwd(&this->prompt[1], MAX_BUFFER - 1);
         this->process = true;
 }
 
@@ -30,6 +33,34 @@ Shell*  new_shell(char** env)
         result->envList = env;
         result->init(result);
         return result;
+}
+
+void    helper_construct_arg_list(Shell* this)
+{
+        Node* curr = this->arguments->head;
+        int size = this->arguments->length;
+        this->argList = (char**)malloc(sizeof(char*) * (size + 1));
+        int i =0;
+        while(curr)
+        {
+            this->argList[i] = (char*)malloc(strlen(curr->value) + 1);
+            memset(this->argList[i], 0, strlen(curr->value) + 1);
+            strcpy(this->argList[i], curr->value);
+            curr = curr->next;
+            i++;
+        }
+        this->argList[i] = NULL;
+}
+
+void    helper_destroy_arg_list(Shell* this)
+{
+        int i =0;
+        while(this->argList[i])
+        {
+            free(this->argList[i]);
+            i++;
+        }
+        free(this->argList);
 }
 
 void    helper_sub_env_vars(Shell* this)
@@ -240,7 +271,7 @@ void    helper_exec_env(Shell* this)
         free(env_str);
 }
 
-bool    shell_exectute_built_in(Shell* this)
+bool    shell_execute_built_in(Shell* this)
 {
         char* arg = this->arguments->head->value;
         if(strcmp(arg, "quit") == 0)
@@ -367,6 +398,7 @@ void    shell_execute_prog(Shell* this)
                 psignal(WTERMSIG(this->status), "Exit signal");
             }
         }
+        helper_destroy_arg_list(this);
 }
 
 int     shell_listen(Shell* this)
@@ -393,4 +425,18 @@ int     shell_listen(Shell* this)
             }
             this->commands->destroy(this->commands);
         }
+}
+
+
+void shell_destroy(Shell* this)
+{
+
+    free(this);
+}
+
+int main(int argc, char* argv[], char* env[])
+{
+    Shell* zsh = new_shell(env);
+    zsh->listen(zsh);
+    zsh->destroy(zsh);
 }

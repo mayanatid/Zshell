@@ -15,6 +15,7 @@ typedef struct shell_st
     pid_t           pid;
     int             status;
     bool            process;
+    char            prompt[MAX_BUFFER];
     char            input[MAX_BUFFER];
     char            cwd_buffer[MAX_BUFFER];
     char            temp_buffer[MAX_BUFFER];
@@ -47,6 +48,7 @@ void    shell_destroy(Shell*);
 
 // helpers
 void    helper_construct_arg_list(Shell*);
+void    helper_destroy_arg_list(Shell*);
 void    helper_sub_env_vars(Shell*);
 char*   helper_find_path_in_env(Shell*);
 char*   helper_construct_env_string(Shell*);
