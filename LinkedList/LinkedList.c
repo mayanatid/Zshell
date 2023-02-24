@@ -38,6 +38,7 @@ void ll_add(LinkedList* this, char* value)
         }
         temp->next = node;
     }
+    this->length++;
 }
 
 void ll_print(LinkedList* this)
