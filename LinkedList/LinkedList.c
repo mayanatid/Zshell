@@ -57,3 +57,13 @@ void ll_destroy(LinkedList* this)
     delete_all_Nodes(this->head);
     free(this);
 }
+
+// int main()
+// {
+//     LinkedList* ll = new_ll();
+//     ll->add(ll, "Hello");
+//     ll->add(ll, "there");
+//     ll->add(ll, "sir");
+//     ll->print(ll);
+//     ll->destroy(ll);
+// }
