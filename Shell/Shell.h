@@ -13,6 +13,8 @@ typedef struct shell_st
 {
     bool            process;
     char            input[MAX_BUFFER];
+    char            cwd_buffer[MAX_BUFFER];
+    char            temp_buffer[MAX_BUFFER];
     LinkedList*     commands;
     LinkedList*     arguments;
     char**          argList;
@@ -42,7 +44,7 @@ void    shell_destroy(Shell*);
 // helpers
 void    helper_sub_env_vars(Shell*);
 char*   helper_find_path_in_env(Shell*);
-bool    helper_cmd_in_dir(char, char*);
+bool    helper_cmd_in_dir(char*, char*);
 char*   helper_read_path(char*, char*);
 void    helper_exec_pwd(Shell*);
 void    helper_exec_cd(Shell*);

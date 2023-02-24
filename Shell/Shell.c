@@ -5,6 +5,8 @@
 void    shell_constructor(Shell* this)
 {
         memset(this->input, 0, MAX_BUFFER);
+        memset(this->cwd_buffer, 0, MAX_BUFFER);
+        memset(this->temp_buffer, 0, MAX_BUFFER);
         this->process = true;
 }
 
@@ -111,6 +113,67 @@ char*   helper_read_path(char* path, char* cmnd)
         }
         return NULL;
 }
+
+void    helper_exec_pwd(Shell* this)
+{
+        char buffer[MAX_BUFFER];
+        memset(buffer,0,MAX_BUFFER);
+        getcwd(buffer, MAX_BUFFER);
+        printf("%s\n", buffer);
+}
+
+void    helper_exec_cd(Shell* this)
+{
+        Node* arg1 = this->arguments->head->next;
+        if(!arg1|| strcmp(arg1->value, "~") == 0)
+        {
+            
+            getcwd(this->cwd_buffer, MAX_BUFFER);
+            chdir(getenv("HOME"));
+        }
+        else if(strcmp(arg1->value, "-") == 0)
+        {
+            memset(this->temp_buffer, 0, MAX_BUFFER);
+            getcwd(this->temp_buffer, MAX_BUFFER);
+            chdir(this->cwd_buffer);
+            strcpy(this->cwd_buffer, this->temp_buffer);
+
+        }
+        else
+        {
+            memset(this->cwd_buffer, 0, MAX_BUFFER);
+            getcwd(this->cwd_buffer, MAX_BUFFER);
+            chdir(arg1->value);
+        }
+}
+
+void    helper_exec_setenv(Shell* this)
+{
+        int i =0;
+        int var_len =0;
+        Node* arg1 = this->arguments->head->next;
+        while(arg1->value[i] != '=')
+        {
+            i++;
+            var_len++;
+        }
+        int val_len = strlen(arg1->value) - var_len - 1;
+        char* var_name = (char*)malloc(var_len + 1);
+        char* var_val = (char*)malloc(val_len + 1);
+
+        memset(var_name, 0, var_len + 1);
+        memset(var_val, 0, val_len + 1);
+
+        strncpy(var_name, &arg1->value[0], var_len);
+        strncpy(var_val, &arg1->value[var_len + 1], val_len);
+
+        setenv(var_name, var_val, 0);
+
+        free(var_name);
+        free(var_val);
+}
+
+
 
 bool    shell_exectute_built_in(Shell* this)
 {
