@@ -140,17 +140,16 @@ void    shell_parse_commands(Shell* this)
             {
                 cmnd = (char*)malloc(i_end - i_start + 1);
                 memset(cmnd, 0 , i_end - i_start + 1);
-                strncpy(cmnd, &this->input[i_start], i_end - i_start + 1);
+                strncpy(cmnd, &this->input[i_start], i_end - i_start);
                 this->commands->add(this->commands, cmnd);
                 free(cmnd);
                 i_start = i_end + 1;
             }
             i_end++;
         }
-        // printf("i_end: %d... i_start: %d\n", i_end, i_start);
         cmnd = (char*)malloc(i_end-i_start + 1);
         memset(cmnd, 0 , i_end - i_start + 1);
-        strncpy(cmnd, &this->input[i_start], i_end - i_start + 1);
+        strncpy(cmnd, &this->input[i_start], i_end - i_start);
         this->commands->add(this->commands, cmnd);
 }
 
@@ -194,16 +193,13 @@ int     shell_listen(Shell* this)
         while(this->process)
         {
             read_ret = this->read_input(this); if (read_ret == 0) return 0;
-            // printf("You entered: %s\n", this->input);
             this->parse_commands(this);
-            // this->commands->print(this->commands);
             Node* curr_cmnd = this->commands->head;
             while(curr_cmnd)
             {
                 this->parse_args(this, curr_cmnd->value);
                 if(this->execute_built_in(this))
                 {
-                    // printf("Built in\n");
                     curr_cmnd = curr_cmnd->next;
                     continue;
                 } 
@@ -213,7 +209,6 @@ int     shell_listen(Shell* this)
                     fprintf(stderr, "Command Not Found!\n");
                     break;
                 }
-                // printf("PATH: %s\n", this->prog_path);
                 this->execute_prog(this);
                 this->arguments->destroy(this->arguments);
                 curr_cmnd = curr_cmnd->next;
