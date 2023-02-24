@@ -6,7 +6,11 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <string.h>
+#include <unistd.h>
 #include "../LinkedList/LinkedList.h"
+
+
 
 #define MAX_BUFFER 1024
 

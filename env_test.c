@@ -225,6 +225,7 @@ void exec_cd(char* cwd_buffer, char* temp_buffer, char** argList)
     }
     else
     {
+        // printf("HERE! changing to %s\n", argList[1]);
         memset(cwd_buffer, 0, MAX_BUFFER);
         getcwd(cwd_buffer, MAX_BUFFER);
         chdir(argList[1]);
