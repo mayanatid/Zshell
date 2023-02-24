@@ -35,10 +35,10 @@ void    shell_execute_prog(Shell* this)
 {
         char* cmnd = this->arguments->head->value;
         cmnd = (char*)realloc(cmnd, strlen(this->prog_path) + 1);
+        this->arguments->head->value = cmnd;
         memset(cmnd, 0,  strlen(this->prog_path) + 1);
         strcpy(cmnd, this->prog_path);
         helper_construct_arg_list(this);
-        // this->arguments->print(this->arguments);
         this->pid = fork();
         if(this->pid == 0)
         {

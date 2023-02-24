@@ -125,8 +125,7 @@ char*   helper_read_path(char* path, char* cmnd)
             {
                 if(helper_cmd_in_dir(s_path, cmnd))
                 {
-                    // printf("Found in %s\n", s_path);
-                    char* r_path = (char*)malloc(j + 1);
+                    char* r_path = (char*)malloc(j+strlen(cmnd) + 2);
                     memset(r_path, 0, j+strlen(cmnd) + 2);
                     strcpy(r_path, s_path);
                     strcat(r_path, "/");
