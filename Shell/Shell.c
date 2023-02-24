@@ -29,6 +29,29 @@ Shell*  new_shell(char** env)
         return result;
 }
 
+void    helper_sub_env_vars(Shell* this)
+{
+        Node* arg = this->arguments->head;
+        while(arg)
+        {
+            if(arg->value[0] == '$')
+            {
+                char* var = getenv(&arg->value[1]);
+                long len = strlen(var) +1;
+                arg->value = (char*)realloc(arg->value,len);
+                memset(arg->value, 0, len);
+                strcpy(arg->value, var);
+            }
+            arg = arg->next;
+        }
+}
+
+char*    helper_find_path_in_env(Shell* this)
+{
+        
+}
+
+
 int    shell_read_input(Shell* this)
 {
         int read_ret = read(STDIN_FILENO, this->input, MAX_BUFFER);
@@ -51,6 +74,7 @@ void    shell_parse_commands(Shell* this)
             if(this->input[i] == '\n')
             {
                 cmnd = (char*)malloc(i_end - i_start + 1);
+                memset(cmnd, 0 , i_end - i_start + 1);
                 strncpy(cmnd, &this->input[i_start], i_end - i_start + 1);
                 this->commands->add(this->commands, cmnd);
                 free(cmnd);
@@ -59,14 +83,32 @@ void    shell_parse_commands(Shell* this)
             }
             i++;
         }
-        cmnd = (char*)malloc(i_end-i_start+1);
+        cmnd = (char*)malloc(i_end-i_start + 1);
+        memset(cmnd, 0 , i_end - i_start + 1);
         strncpy(cmnd, &this->input[i_start], i_end - i_start + 1);
         this->commands->add(this->commands, cmnd);
 }
 
-void    shell_parse_args(Shell* this)
+void    shell_parse_args(Shell* this, char* command)
 {
-
+        this->arguments = new_ll();
+        int i_start= 0;
+        int i_end = 0;
+        int j = 0;
+        char* arg;
+        while(command[i_end] != '\0')
+        {
+            if(command[i_end] == ' ' || command[i_end] == '\0')
+            {
+                arg = (char*)malloc(i_end - i_start + 1);
+                memset(arg, 0, i_end - i_start + 1);
+                strncpy(arg, &command[i_start], i_end - i_start);
+                this->arguments->add(this->arguments, arg);
+                i_start = i_end + 1;
+                j++;
+            }
+        }
+        helper_sub_env_vars(this); // Sub in env vars if any
 }
 
 void    shell_parse_input(Shell* this)
@@ -86,11 +128,14 @@ int     shell_listen(Shell* this)
         {
             read_ret = this->read_input(this); if (read_ret == 0) return 0;
             this->parse_commands(this);
-            Node* temp = this->commands->head;
-            while(temp)
+            Node* curr_cmnd = this->commands->head;
+            while(curr_cmnd)
             {
+                this->parse_args(this, curr_cmnd->value);
 
-                temp = temp->next;
+                this->arguments->destroy(this->arguments);
+                curr_cmnd = curr_cmnd->next;
             }
+            this->commands->destroy(this->commands);
         }
 }
